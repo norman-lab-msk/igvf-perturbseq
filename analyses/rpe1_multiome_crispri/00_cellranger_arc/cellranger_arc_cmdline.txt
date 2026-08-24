@@ -1,0 +1,1 @@
+cellranger-arc count --id=Lane1_040 --reference=/fscratch/eli/genomes/refdata-cellranger-arc-GRCh38-2020-A-2.0.0 --libraries=040_libraries.csv --localcores=40 --localmem=128
