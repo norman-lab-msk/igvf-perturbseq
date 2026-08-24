@@ -9,23 +9,41 @@ transcriptome and epigenome.* Cell Systems **16**, 101161 (2025).
 
 CRISPRi (dCas9-ZIM3) in hTERT RPE-1, gene expression and chromatin accessibility from the same
 nuclei via 10x Multiome. 13 chromatin remodelers — SMARCE1, SMARCB1, ARID1A, SMARCA4, DPF2,
-SMARCC1, SMARCC2, EP400, ACTL6A, DMAP1, SUZ12, EZH2, YY1 — plus 3 non-targeting controls.
+SMARCC1, SMARCC2, EP400, ACTL6A, DMAP1, SUZ12, EZH2, YY1 — plus 3 non-targeting controls, in one
+channel (`Lane1_040`).
+
+## The chain
+
+    cellranger-arc output  +  guide assignment from the gRNA FASTQs
+              |
+              v
+    matrices in which guide identity is a dimension
+              |
+              v
+    element-level differential analyses
+
+cellranger-arc has no CRISPR guide-capture modality, so the sgRNA library was sequenced separately
+and called on its own. That is why the middle step exists: it is where the guide axis is
+reconstructed and joined to the expression and accessibility data.
+
+| Step | Directory | Produces |
+|---|---|---|
+| 0 | [`00_cellranger_arc/`](00_cellranger_arc/) | the joint matrix and the ATAC fragments — invocation and libraries file only, no lab code |
+| 1 | [`01_guide_assignment/`](01_guide_assignment/) | per-(barcode, UMI, protospacer) table and the singlet calls |
+| 2 | [`02_guide_assigned_matrices/`](02_guide_assigned_matrices/) | `rpe1_multiome_cell_by_guide.h5ad` — the guide axis — plus the singlet-filtered intermediates |
+| 3 | [`03_differential_analyses/`](03_differential_analyses/) | the two element-level result tables, and the exact bytes submitted |
+
+Step 1's code is **public in the paper repository**,
+[`norman-lab-msk/multiomeperturbseq`](https://github.com/norman-lab-msk/multiomeperturbseq), and is
+referenced rather than copied — see that step's README for the byte-level comparison against the
+copy that was actually run. The normalisation and ATAC peak-calling that feed step 3 are in the same
+repository, in `Fig1_vRevised.ipynb` and `Fig2_vRevised.ipynb`.
 
 ## "element" definition
 
 The **perturbed promoter**, keyed on `intended_target_chr/_start/_end` — nearest EPD extended
-promoter window to the guide.
-
-## Processing
-
-`notebooks/multiome_data_organization.ipynb`:
-
-1. Maps each guide protospacer to genomic coordinates, then to its nearest EPD promoter window.
-2. **GEX** — `ks_de` against NTC cells on the normalized population, with Benjamini–Yekutieli
-   control; effect score is the mean-population z-score, filtered to `q < 0.1`, symbols mapped to
-   Ensembl IDs via the GTF.
-3. **ATAC** — MACS3 peaks merged, paired-insertion peak matrix, Mann–Whitney U per guide against
-   NTC with Benjamini–Hochberg control; effect score is log2 fold-change, filtered to `q < 0.1`.
+promoter window to the guide. The two modalities differ only in readout: expression reports
+`target_gene`, accessibility reports the peak's `chr/start/end`.
 
 ## Outputs
 
@@ -42,7 +60,7 @@ Columns — `effect_score`, `p_val`, `p_val_adj`, `guide_id`,
 
 `effect_score` is a different quantity in each: GEX is mean z-scored expression over the guide's
 cells, in SD units; ATAC is log2 fold-change of mean accessibility against NTC, with a `1e-3`
-pseudocount.
+pseudocount. See `03_differential_analyses/README.md` for why.
 
 ## Environment
 
@@ -52,45 +70,5 @@ see [thomasmaxwellnorman/perturbseq_demo](https://github.com/thomasmaxwellnorman
 
 ## To run
 
-From `notebooks/`. Paths default to the cluster locations used for the published run; override to
-run elsewhere.
-
-```bash
-export MULTIOME_DATA_ROOT=/path/to/data     # default /data1/normantm/eli
-export PERTURBSEQ_PATH=/path/to/perturbseq  # default $MULTIOME_DATA_ROOT/software
-export MULTIOME_RESULTS=/path/to/results    # default ../results
-```
-
-## Inputs
-
-Pinned by SHA-256. The two matrices are the two modalities of the same experiment — singlet
-nuclei with an assigned guide, identical barcodes in both.
-
-| File | Source / version | Shipped | SHA-256 |
-|---|---|---|---|
-| `notebooks/multiome_paper_igvf_guides.csv` | this repo — 16 guides, 13 targeting + 3 NTC | yes | `beaa98924e3f78a5b2ac12bce14a5e64e746c9e7f0e1d3652b7c68cec81deb41` |
-| `gex_norm_regressed.hdf5` | GEX half: 4,724 cells × 9,992 genes, z-scored, `perturbseq` CellPopulation format. Derived from the deposited counts `040_singlets_gex.h5ad` (4,724 × 36,601, raw). 370 MB | no | `2ba7f3ac585f8e2b04be423de8a8c2fd3a38a441c3f769a80061167f2865bd71` |
-| `atac_singlets_macs3_peaks.h5ad` | ATAC half: the same 4,724 nuclei, 250,000 selected 500-bp bins, `uns['macs3']` holding per-guide peak calls for the 13 targets + NTC. Derived from the deposited counts `040_singlets_atac.h5ad` (4,724 × 6,062,095 bins, no peak calls). 1.6 GB | no | `90dbc9f9613d09a146cbd60d4376a84debc1cf05b0478456fe750b9c265fd45c` |
-| `genome.fa` | GRCh38 (`chr1` = 248,956,422), 3.0 GB | no | `fb7421217e7058120cd60a5277445198e8deef2dff1edc46cd1e98b31fe64cbb` |
-| `genes.gtf` | GENCODE v32 / Ensembl 98, GRCh38 — the annotation in Cell Ranger `GRCh38-2020-A`, 1.4 GB | no | `2dc6e7406e883a146c7cc933a2b08c8d0546e7b57e0487a93cbbc1c455868528` |
-| `epdNewHuman006_extended_promoter_regions.bed` | EPD `epdNew` Human 006, extended promoter regions, 1.7 MB | no | `b6777b8e0b78b8cc06e1f9fe710eba8e5feae661beb30904a14040832443d300` |
-| `perturbseq` | [thomasmaxwellnorman/perturbseq_demo](https://github.com/thomasmaxwellnorman/perturbseq_demo), local copy — digest over its 7 `.py` files | no | `dfeb9ee6dc4c04c5bbfff4579a054e25f6abd082101266305ca968eb1a8552d2` |
-
-**Data availability.** Raw sequencing: SRA
-[PRJNA1128171](https://www.ncbi.nlm.nih.gov/bioproject/?term=PRJNA1128171). GEX and ATAC count
-matrices: [10.5281/zenodo.15116138](https://doi.org/10.5281/zenodo.15116138). Paper's full analysis
-code: [norman-lab-msk/multiomeperturbseq](https://github.com/norman-lab-msk/multiomeperturbseq),
-archived at [10.5281/zenodo.14217682](https://doi.org/10.5281/zenodo.14217682).
-
-The two matrices above are processed derivatives of the deposited counts; the processing lives in
-that repository, not this one.
-
-## IGVF portal objects
-
-| Object | Accession |
-|---|---|
-| GEX measurement set | `IGVFDS4073QPQB` |
-| ATAC measurement set | `IGVFDS9292PROA` |
-| Guide sequencing auxiliary set | `IGVFDS4833CNYU` |
-| Guide RNA sequences file | `IGVFFI1270VQEU` |
-| Curated set | `IGVFDS2221DOTB` |
+Each step's README gives its own command. Paths default to the cluster locations used for the
+published run; override them with the environment variables each step documents.
