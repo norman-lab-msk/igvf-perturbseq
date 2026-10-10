@@ -13,5 +13,8 @@ dependencies:
   - numpy
   - pandas
   - scipy
+  # all_pairs_gex_results.py reads the raw-count AnnData; perturbseq reads its store with PyTables.
+  - anndata
+  - pytables
   # perturbseq is not on PyPI/conda; the notebook loads it from a local checkout.
   # Source: https://github.com/thomasmaxwellnorman/perturbseq_demo

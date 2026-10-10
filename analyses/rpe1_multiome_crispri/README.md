@@ -53,6 +53,7 @@ Run of record, 2026-08-21, in `results/`.
 |---|---|---|
 | `multiome_paper_guide_effect_matrix.csv` | element × gene | 14,868 |
 | `multiome_paper_differential_peaks_by_guide.csv` | element × peak | 10,935 |
+| `rpe1_multiome_element_level_gex_results_all_pairs.tsv` | element × gene, every tested pair | 129,896 |
 
 Columns — `effect_score`, `p_val`, `p_val_adj`, `guide_id`,
 `intended_target_name`, `intended_target_chr/_start/_end` — plus `target_gene` (GEX) or
@@ -61,6 +62,10 @@ Columns — `effect_score`, `p_val`, `p_val_adj`, `guide_id`,
 `effect_score` is a different quantity in each: GEX is mean z-scored expression over the guide's
 cells, in SD units; ATAC is log2 fold-change of mean accessibility against NTC, with a `1e-3`
 pseudocount. See `03_differential_analyses/README.md` for why.
+
+The all-pairs table carries the expression columns for all 13 × 9,992 tested pairs, plus
+`log2_fold_change` (raw counts against NTC, 1 CPM pseudocount) and `significant` (q < 0.1). Its
+`TRUE` rows are `multiome_paper_guide_effect_matrix.csv`.
 
 ## Environment
 
