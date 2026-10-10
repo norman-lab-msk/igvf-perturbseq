@@ -63,8 +63,7 @@ Columns — `effect_score`, `p_val`, `p_val_adj`, `guide_id`,
 cells, in SD units; ATAC is log2 fold-change of mean accessibility against NTC, with a `1e-3`
 pseudocount. See `03_differential_analyses/README.md` for why.
 
-The all-pairs table adds `log2_fold_change` (raw counts against NTC, 1 CPM pseudocount) and
-`significant` (q < 0.1).
+The all-pairs table adds `log2_fold_change` (raw counts against NTC, 1 CPM pseudocount).
 
 ## Environment
 

@@ -3,18 +3,17 @@
 
 `multiome_data_organization.ipynb` runs the expression test and keeps only the pairs at q < 0.1.
 This script runs the same test on the same matrix and keeps all of them, so a pair that was tested
-and not called is visible too. It adds two columns to the notebook's nine:
+and not called is visible too. It adds one column to the notebook's nine:
 
   log2_fold_change   log2((CPM_guide + 1) / (CPM_NTC + 1)) from the raw counts of the same nuclei,
                      summed over each guide's nuclei and over the NTC nuclei. Descriptive only:
                      `p_val` and `p_val_adj` belong to the test behind `effect_score`, and the two
                      can disagree in sign where the effect is small.
-  significant        TRUE where p_val_adj < 0.1, the threshold the notebook filtered at.
 
 The test itself is unchanged: `perturbseq.ks_de` of each guide's cells against the NTC cells on the
 normalised, regressed matrix, Benjamini-Yekutieli within each guide, `effect_score` = mean z-scored
 expression. Output is in the submitted layout (tab-separated, no index column, integer
-coordinates); its TRUE rows are the notebook's rows.
+coordinates); its rows at p_val_adj < 0.1 are the notebook's rows.
 """
 import argparse
 import os
@@ -118,10 +117,9 @@ def main():
         log2fc[rows] = np.log2((cpm[name][gene[rows]] + PSEUDOCOUNT)
                                / (cpm["NTC"][gene[rows]] + PSEUDOCOUNT))
     res["log2_fold_change"] = log2fc
-    res["significant"] = np.where(res["p_val_adj"] < Q_THRESH, "TRUE", "FALSE")
 
     res.to_csv(args.out, sep="\t", index=False)
-    print(f"Wrote {len(res)} rows to {args.out}: {(res.significant == 'TRUE').sum()} significant, "
+    print(f"Wrote {len(res)} rows to {args.out}: {(res.p_val_adj < Q_THRESH).sum()} at q < {Q_THRESH}, "
           f"{np.isnan(log2fc).sum()} without log2_fold_change (target_gene not in the count matrix)")
 
 

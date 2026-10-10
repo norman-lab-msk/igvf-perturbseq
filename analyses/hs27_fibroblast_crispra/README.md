@@ -39,8 +39,7 @@ coefficients.
 4. Melts effect scores and both p-value layers to one row per element × gene, maps symbols to
    unversioned Ensembl IDs, filters to `p_val_adj < 0.05`.
 
-`add_log2_fold_change.py` writes the same table for every tested pair and adds `log2_fold_change`
-and `significant`.
+`add_log2_fold_change.py` writes the same table for every tested pair and adds `log2_fold_change`.
 
 ## Inputs
 
@@ -82,12 +81,12 @@ Zenodo record.
 
 `results/element_level_results_all_pairs.tsv` — every tested element × gene, 1,538,082 rows
 (313 elements × 4,914 genes). Not committed (257 MB); SHA-256
-`d27c1b19ee34c82e72369fef5512967ecc384adab3a4b3e619dc8de700238e8c`. Same columns, plus:
+`043f8829780c8c4c679820e598fdfe69d585914080221f78e7e22f5c0f25643d`. Its rows at `p_val_adj < 0.05` are
+`element_level_results.tsv`. Same columns, plus:
 
 | Column | Meaning |
 |---|---|
 | `log2_fold_change` | Model-based: `log2((CPM + 1) / (CPM_control + 1))`, from the count-scale regression (control + guide coefficient, clipped at zero). |
-| `significant` | `TRUE` where `p_val_adj < 0.05` — the rows of `element_level_results.tsv`. |
 
 ## To run
 
@@ -96,7 +95,7 @@ Fetch the matrix from Zenodo, then run **from this directory**
 ```bash
 python generate_element_level_results.py --out results/element_level_results.tsv
 
-# every tested pair, with log2_fold_change and significant
+# every tested pair, with log2_fold_change
 python generate_element_level_results.py --padj_thresh 2 --out element_level_results_unfiltered.tsv
 python add_log2_fold_change.py
 ```

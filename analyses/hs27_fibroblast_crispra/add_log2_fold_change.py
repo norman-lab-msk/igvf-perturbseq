@@ -13,8 +13,6 @@ def parse_args():
     p.add_argument('--count_coefs',
                    default='20240310_fibroblast_final_low_UMI_count_regressions_coef_mean_pop.h5ad')
     p.add_argument('--pseudocount_cpm', type=float, default=1)
-    # Threshold behind the `significant` column; 0.05 is the cut the released table was filtered at.
-    p.add_argument('--padj_thresh', type=float, default=0.05)
     p.add_argument('--out', default='results/element_level_results_all_pairs.tsv')
     return p.parse_args()
 
@@ -45,8 +43,6 @@ def main():
     pseudocount = args.pseudocount_cpm * control_total / 1e6
     res['log2_fold_change'] = np.log2((np.maximum(perturbed, 0) + pseudocount)
                                       / (control + pseudocount))
-
-    res['significant'] = np.where(res.p_val_adj.astype(float) < args.padj_thresh, 'TRUE', 'FALSE')
 
     res.to_csv(args.out, sep='\t', index=False)
     print(f"Wrote {len(res)} rows to {args.out}: pseudocount {args.pseudocount_cpm} CPM = "

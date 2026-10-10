@@ -11,7 +11,7 @@ promoter, the nearest EPD extended promoter window to the guide, keyed on
 | `multiome_data_organization.ipynb` | maps guides to promoter windows, then runs both differential analyses |
 | `multiome_paper_igvf_guides.csv` | the 16-guide library table, with coordinates filled in by the notebook |
 | `prepare_upload.py` | reformats the two result CSVs into the exact bytes submitted to IGVF |
-| `all_pairs_gex_results.py` | the expression analysis for every tested pair, with `log2_fold_change` and `significant` |
+| `all_pairs_gex_results.py` | the expression analysis for every tested pair, with `log2_fold_change` |
 
 Outputs land in `../results/`.
 
@@ -37,12 +37,12 @@ output file** and the two are not comparable on a common scale.
 
 `all_pairs_gex_results.py` runs the notebook's expression test without the q < 0.1 filter:
 13 × 9,992 = 129,896 pairs, written to
-`../results/rpe1_multiome_element_level_gex_results_all_pairs.tsv`. Same columns, plus:
+`../results/rpe1_multiome_element_level_gex_results_all_pairs.tsv`. Its rows at `p_val_adj < 0.1`
+are the submitted table. Same columns, plus:
 
 | Column | Meaning |
 |---|---|
 | `log2_fold_change` | `log2((CPM_guide + 1) / (CPM_NTC + 1))` from raw counts summed over each guide's nuclei and the NTC nuclei. |
-| `significant` | `TRUE` where `p_val_adj < 0.1` — the rows of the submitted table. |
 
 ```bash
 python all_pairs_gex_results.py --gex /writable/copy/of/gex_norm_regressed.hdf5
