@@ -56,7 +56,8 @@ Pinned by SHA-256, paths relative to this directory.
 **Data availability.** Mean-population matrix:
 [10.5281/zenodo.15200179](https://doi.org/10.5281/zenodo.15200179) (byte-identical to the run of
 record, md5 `ba44c7813903bb5df900348d6b0d589a`). Other processed data:
-<https://zenodo.org/communities/normanlabmsk/>.
+<https://zenodo.org/communities/normanlabmsk/>. Raw FASTQs: SRA
+[PRJNA1108254](https://www.ncbi.nlm.nih.gov/bioproject/?term=PRJNA1108254).
 
 The count-scale regression matrix is not deposited. Regenerate it with *Step 4 - Simplified
 regressions* in [norman-lab-msk/TFs_CRISPRa](https://github.com/norman-lab-msk/TFs_CRISPRa) from
