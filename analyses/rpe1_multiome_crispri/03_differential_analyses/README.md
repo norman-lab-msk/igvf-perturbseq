@@ -70,13 +70,15 @@ after). Raw counts: SHA-256 `d13de8ff385f03c6cfe4188ca049ce2cb15075fabaa06b27f35
 
 ```bash
 jupyter nbconvert --execute multiome_data_organization.ipynb   # writes ../results/*.csv
-python prepare_upload.py                                       # writes ../results/upload/*.tsv.gz
+python prepare_upload.py                                       # writes ../results/upload/*.tsv
 ```
 
-`prepare_upload.py` drops the pandas index column, rewrites coordinate columns as integers (asserted
-lossless) and gzips with `mtime=0` so the md5 is reproducible. It changes no values. The run of
-record: `…gex_results.tsv.gz` md5 `722a58d8a34a0cfa52d06cdf9a691be8`, `…atac_results.tsv.gz` md5
-`0ba54097facd23e7361ad48caf86b881`.
+`prepare_upload.py` drops the pandas index column and rewrites coordinate columns as integers
+(asserted lossless). It changes no values. The files were handed over uncompressed: `…gex_results.tsv`
+md5 `219be77954867da29c48deb8178278d1`, `…atac_results.tsv` md5 `c912e674dad64fe9de18c8b8bbf132ce`.
+The portal stores them gzipped and records these as `content_md5sum`; the `md5sum` it reports
+(`de0e31a4…`, `60df2f12…`) is of its own compressed copy. `--gzip` writes a compressed form with
+`mtime=0`, so that md5 is reproducible too.
 
 ## Environment
 
