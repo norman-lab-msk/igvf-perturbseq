@@ -39,15 +39,8 @@ coefficients.
 4. Melts effect scores and both p-value layers to one row per element × gene, maps symbols to
    unversioned Ensembl IDs, filters to `p_val_adj < 0.05`.
 
-`add_log2_fold_change.py` then extends the same table to **every tested pair** — step 4 without the
-filter — and adds two columns:
-
-- `log2_fold_change`, from the count-scale regression of the same screen (TFs_CRISPRa, *Step 4 -
-  Simplified regressions*): raw UMI counts regressed on the guide design matrix, so the `control`
-  coefficient is baseline UMIs per cell and each guide coefficient is the change from it. Modelled
-  expression with the guide is `control + coefficient`, clipped at zero, and the column is
-  `log2((CPM + 1) / (CPM_control + 1))`.
-- `significant`, `TRUE` where `p_val_adj < 0.05` — the rows of `element_level_results.tsv`.
+`add_log2_fold_change.py` writes the same table for every tested pair and adds `log2_fold_change`
+and `significant`.
 
 ## Inputs
 
@@ -65,13 +58,10 @@ Pinned by SHA-256, paths relative to this directory.
 record, md5 `ba44c7813903bb5df900348d6b0d589a`). Other processed data:
 <https://zenodo.org/communities/normanlabmsk/>.
 
-The count-scale regression matrix is not deposited. It is the output of *Step 4 - Simplified
-regressions for newly expressed genes and on-target activation in Hs27 experiment* in
-[norman-lab-msk/TFs_CRISPRa](https://github.com/norman-lab-msk/TFs_CRISPRa), run on two files from
-the same Zenodo record: `fibroblast_CRISPRa_final_pop.h5ad` (md5 `7abb92c81896ec3334d144a99dd544d1`)
-and `fibroblast_CRISPRa_aggr_total_guide_umis.h5` (md5 `3d6f1c7cf3ac5a3c034d67ca6525e587`). The
-notebook writes `…coef_mean_pop.hdf`; its `/matrix` table is `X` in the AnnData read here. Raw FASTQs: SRA
-[PRJNA1108254](https://www.ncbi.nlm.nih.gov/bioproject/?term=PRJNA1108254).
+The count-scale regression matrix is not deposited. Regenerate it with *Step 4 - Simplified
+regressions* in [norman-lab-msk/TFs_CRISPRa](https://github.com/norman-lab-msk/TFs_CRISPRa) from
+`fibroblast_CRISPRa_final_pop.h5ad` and `fibroblast_CRISPRa_aggr_total_guide_umis.h5` in the same
+Zenodo record.
 
 ## Outputs
 
@@ -89,23 +79,14 @@ notebook writes `…coef_mean_pop.hdf`; its `/matrix` table is `X` in the AnnDat
 `results/element_level_results_guide_summary.tsv` — one row per element, with `n_de_genes`,
 `n_upregulated`, `n_downregulated` and the element coordinates.
 
-`results/element_level_results_all_pairs.tsv` — one row per tested element × gene: 1,538,082 rows,
-313 elements × 4,914 genes. 257 MB, so it is not committed; SHA-256
-`d27c1b19ee34c82e72369fef5512967ecc384adab3a4b3e619dc8de700238e8c`. The columns above, then:
+`results/element_level_results_all_pairs.tsv` — every tested element × gene, 1,538,082 rows
+(313 elements × 4,914 genes). Not committed (257 MB); SHA-256
+`d27c1b19ee34c82e72369fef5512967ecc384adab3a4b3e619dc8de700238e8c`. Same columns, plus:
 
 | Column | Meaning |
 |---|---|
-| `log2_fold_change` | Model-based log2 fold change against control, 1 CPM pseudocount. Descriptive: the p-values belong to `effect_score`. |
-| `significant` | `TRUE` / `FALSE`, `p_val_adj < 0.05`. 31,047 rows are `TRUE`. |
-
-Its `TRUE` rows, first nine columns, are `element_level_results.tsv` byte for byte. It has six more
-elements than that file: active elements with no gene at `p_val_adj < 0.05`.
-
-`log2_fold_change` is a ratio of regression estimates, not of two observed groups of cells — the
-droplets are overloaded, so no cell carries one guide alone. Where the additive model predicts
-expression at or below zero (14,768 rows, 1.0%; 317 of them `TRUE`) the value is
-`log2(1 / (CPM_control + 1))`: it says the gene is modelled as off and scales with the gene's
-baseline, not with the strength of repression. These sit on low-baseline genes.
+| `log2_fold_change` | Model-based: `log2((CPM + 1) / (CPM_control + 1))`, from the count-scale regression (control + guide coefficient, clipped at zero). |
+| `significant` | `TRUE` where `p_val_adj < 0.05` — the rows of `element_level_results.tsv`. |
 
 ## To run
 
