@@ -63,7 +63,14 @@ Pinned by SHA-256, paths relative to this directory.
 **Data availability.** Mean-population matrix:
 [10.5281/zenodo.15200179](https://doi.org/10.5281/zenodo.15200179) (byte-identical to the run of
 record, md5 `ba44c7813903bb5df900348d6b0d589a`). Other processed data:
-<https://zenodo.org/communities/normanlabmsk/>. Raw FASTQs: SRA
+<https://zenodo.org/communities/normanlabmsk/>.
+
+The count-scale regression matrix is not deposited. It is the output of *Step 4 - Simplified
+regressions for newly expressed genes and on-target activation in Hs27 experiment* in
+[norman-lab-msk/TFs_CRISPRa](https://github.com/norman-lab-msk/TFs_CRISPRa), run on two files from
+the same Zenodo record: `fibroblast_CRISPRa_final_pop.h5ad` (md5 `7abb92c81896ec3334d144a99dd544d1`)
+and `fibroblast_CRISPRa_aggr_total_guide_umis.h5` (md5 `3d6f1c7cf3ac5a3c034d67ca6525e587`). The
+notebook writes `…coef_mean_pop.hdf`; its `/matrix` table is `X` in the AnnData read here. Raw FASTQs: SRA
 [PRJNA1108254](https://www.ncbi.nlm.nih.gov/bioproject/?term=PRJNA1108254).
 
 ## Outputs
