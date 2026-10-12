@@ -38,7 +38,9 @@ output file** and the two are not comparable on a common scale.
 `all_pairs_gex_results.py` runs the notebook's expression test without the q < 0.1 filter:
 13 × 9,992 = 129,896 pairs, written to
 `../results/rpe1_multiome_element_level_gex_results_all_pairs.tsv`. Its rows at `p_val_adj < 0.1`
-are the submitted table. Same columns, plus:
+are the submitted table, with `target_gene` corrected for seven genes: the ID now comes from Cell
+Ranger's feature table, not a lookup by gene name, and two IDs absent from GENCODE v43 take their v43 ID
+(`../../gencode_v43_gene_ids.tsv`). Same columns, plus:
 
 | Column | Meaning |
 |---|---|

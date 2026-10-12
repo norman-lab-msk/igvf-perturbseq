@@ -13,6 +13,8 @@ def parse_args():
     p.add_argument('--count_coefs',
                    default='20240310_fibroblast_final_low_UMI_count_regressions_coef_mean_pop.h5ad')
     p.add_argument('--pseudocount_cpm', type=float, default=1)
+    # Ensembl IDs that are not GENCODE v43 genes, and the ID the same gene carries there.
+    p.add_argument('--id_updates', default='../gencode_v43_gene_ids.tsv')
     p.add_argument('--out', default='results/element_level_results_all_pairs.tsv')
     return p.parse_args()
 
@@ -43,6 +45,10 @@ def main():
     pseudocount = args.pseudocount_cpm * control_total / 1e6
     res['log2_fold_change'] = np.log2((np.maximum(perturbed, 0) + pseudocount)
                                       / (control + pseudocount))
+
+    updates = pd.read_csv(args.id_updates, sep='\t').set_index('ensembl_id').gencode_v43_id
+    for column in ('target_gene', 'intended_target_name'):
+        res[column] = res[column].replace(updates)
 
     res.to_csv(args.out, sep='\t', index=False)
     print(f"Wrote {len(res)} rows to {args.out}: pseudocount {args.pseudocount_cpm} CPM = "

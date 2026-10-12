@@ -14,6 +14,11 @@ The test itself is unchanged: `perturbseq.ks_de` of each guide's cells against t
 normalised, regressed matrix, Benjamini-Yekutieli within each guide, `effect_score` = mean z-scored
 expression. Output is in the submitted layout (tab-separated, no index column, integer
 coordinates); its rows at p_val_adj < 0.1 are the notebook's rows.
+
+`target_gene` differs from the notebook's for seven genes. The notebook looks the Ensembl ID up by
+gene name, which leaves two de-duplicated symbols blank and gives three genes that share a name with
+another the other gene's ID; here the ID comes from Cell Ranger's feature table. Two more carry an
+ID that is not in GENCODE v43 and are given their v43 ID (`../../gencode_v43_gene_ids.tsv`).
 """
 import argparse
 import os
@@ -33,7 +38,7 @@ RESULTS = Path(os.environ.get("MULTIOME_RESULTS", HERE / ".." / "results")).reso
 SHARE = DATA_ROOT / "T7" / "202404_SIRLOIN_multiome" / "share"
 GEX_HDF5 = SHARE / "gex_norm_regressed.hdf5"
 RAW_H5AD = SHARE / "040_singlets_gex_unprocessed.h5ad"
-GENES_GTF = DATA_ROOT / "seq2gex" / "data" / "genome" / "genes.gtf"
+ID_UPDATES = HERE / ".." / ".." / "gencode_v43_gene_ids.tsv"
 GUIDES_CSV = HERE / "multiome_paper_igvf_guides.csv"
 OUT = RESULTS / "rpe1_multiome_element_level_gex_results_all_pairs.tsv"
 
@@ -41,21 +46,6 @@ Q_THRESH = 0.1
 PSEUDOCOUNT = 1.0   # CPM
 COLUMNS = ["effect_score", "p_val", "p_val_adj", "guide_id", "target_gene", "intended_target_name",
            "intended_target_chr", "intended_target_start", "intended_target_end"]
-
-
-def gene_name_to_id(gtf_path):
-    """gene_name -> gene_id over the GTF's gene records; a repeated name keeps its last ID."""
-    mapping = {}
-    with open(gtf_path) as fh:
-        for line in fh:
-            if line.startswith("#"):
-                continue
-            fields = line.rstrip("\n").split("\t")
-            if fields[2] != "gene":
-                continue
-            attrs = dict(item.strip().split(" ", 1) for item in fields[8].rstrip(";").split(";"))
-            mapping[attrs["gene_name"].strip('"')] = attrs["gene_id"].strip('"')
-    return mapping
 
 
 def melt(frame, value_name):
@@ -96,14 +86,17 @@ def main():
            .rename({"gene": "target_gene", "zscore": "effect_score", "p": "p_val", "q": "p_val_adj",
                     "guide_target": "gene_symbol"}, axis=1)
            .merge(elements, on="gene_symbol"))
-    symbol = res["target_gene"]
-    res["target_gene"] = symbol.map(gene_name_to_id(GENES_GTF))
+    # Readout genes are named by Cell Ranger's symbols, which are de-duplicated (`MATR3-1`), so the
+    # Ensembl ID is read from Cell Ranger's own feature table rather than looked up by name.
+    raw = ad.read_h5ad(RAW_H5AD)
+    cellranger_id = raw.var["gene_ids"]
+    res["target_gene"] = res["target_gene"].map(cellranger_id)
+    assert res["target_gene"].notna().all()
     res = res[COLUMNS].copy()
     for column in ("intended_target_start", "intended_target_end"):
         assert (res[column] % 1 == 0).all(), f"{column} is not integral"
         res[column] = res[column].astype(int)
 
-    raw = ad.read_h5ad(RAW_H5AD)
     group = raw.obs["guide_target"].astype(str).values
     cpm = {}
     for name in np.unique(group):
@@ -118,9 +111,13 @@ def main():
                                / (cpm["NTC"][gene[rows]] + PSEUDOCOUNT))
     res["log2_fold_change"] = log2fc
 
+    # Ensembl IDs that are not GENCODE v43 genes, and the ID the same gene carries there.
+    updates = pd.read_csv(ID_UPDATES, sep="\t").set_index("ensembl_id").gencode_v43_id
+    res["target_gene"] = res["target_gene"].replace(updates)
+
     res.to_csv(args.out, sep="\t", index=False)
     print(f"Wrote {len(res)} rows to {args.out}: {(res.p_val_adj < Q_THRESH).sum()} at q < {Q_THRESH}, "
-          f"{np.isnan(log2fc).sum()} without log2_fold_change (target_gene not in the count matrix)")
+          f"{np.isnan(log2fc).sum()} without log2_fold_change")
 
 
 if __name__ == "__main__":

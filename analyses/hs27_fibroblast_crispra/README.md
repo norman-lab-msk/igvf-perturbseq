@@ -81,8 +81,9 @@ Zenodo record.
 
 `results/element_level_results_all_pairs.tsv` — every tested element × gene, 1,538,082 rows
 (313 elements × 4,914 genes). Not committed (257 MB); SHA-256
-`043f8829780c8c4c679820e598fdfe69d585914080221f78e7e22f5c0f25643d`. Its rows at `p_val_adj < 0.05` are
-`element_level_results.tsv`. Same columns, plus:
+`43fd56615438986b5ae8b28d271cf58e9e80269e3ab77fd05e5a48c90028f981`. Its rows at `p_val_adj < 0.05` are
+`element_level_results.tsv`, with seven Ensembl IDs that are not GENCODE v43 genes replaced by their v43
+IDs (`../gencode_v43_gene_ids.tsv`). Same columns, plus:
 
 | Column | Meaning |
 |---|---|
