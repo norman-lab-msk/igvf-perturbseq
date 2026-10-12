@@ -11,6 +11,7 @@ promoter, the nearest EPD extended promoter window to the guide, keyed on
 | `multiome_data_organization.ipynb` | maps guides to promoter windows, then runs both differential analyses |
 | `multiome_paper_igvf_guides.csv` | the 16-guide library table, with coordinates filled in by the notebook |
 | `prepare_upload.py` | reformats the two result CSVs into the exact bytes submitted to IGVF |
+| `all_pairs_gex_results.py` | the expression analysis for every tested pair, with `log2_fold_change` |
 
 Outputs land in `../results/`.
 
@@ -32,17 +33,38 @@ paired-insertion counts, where a ratio of means is standard and a per-peak z-sco
 sparsity rather than the perturbation. **`effect_score` therefore means something different in each
 output file** and the two are not comparable on a common scale.
 
+## Every tested pair
+
+`all_pairs_gex_results.py` runs the notebook's expression test without the q < 0.1 filter:
+13 × 9,992 = 129,896 pairs, written to
+`../results/rpe1_multiome_element_level_gex_results_all_pairs.tsv`. Its rows at `p_val_adj < 0.1`
+are the submitted table, with `target_gene` corrected for seven genes: the ID now comes from Cell
+Ranger's feature table, not a lookup by gene name, and two IDs absent from GENCODE v43 take their v43 ID
+(`../../gencode_v43_gene_ids.tsv`). Same columns, plus:
+
+| Column | Meaning |
+|---|---|
+| `log2_fold_change` | `log2((CPM_guide + 1) / (CPM_NTC + 1))` from raw counts summed over each guide's nuclei and the NTC nuclei. |
+
+```bash
+python all_pairs_gex_results.py --gex /writable/copy/of/gex_norm_regressed.hdf5
+```
+
+`perturbseq` opens its store read-write, so `--gex` needs a writable copy.
+
 ## Reproducing the submitted files
 
 ```bash
 jupyter nbconvert --execute multiome_data_organization.ipynb   # writes ../results/*.csv
-python prepare_upload.py                                       # writes ../results/upload/*.tsv.gz
+python prepare_upload.py                                       # writes ../results/upload/*.tsv
 ```
 
-`prepare_upload.py` drops the pandas index column, rewrites coordinate columns as integers (asserted
-lossless) and gzips with `mtime=0` so the md5 is reproducible. It changes no values. The run of
-record: `…gex_results.tsv.gz` md5 `722a58d8a34a0cfa52d06cdf9a691be8`, `…atac_results.tsv.gz` md5
-`0ba54097facd23e7361ad48caf86b881`.
+`prepare_upload.py` drops the pandas index column and rewrites coordinate columns as integers
+(asserted lossless). It changes no values. The files were handed over uncompressed: `…gex_results.tsv`
+md5 `219be77954867da29c48deb8178278d1`, `…atac_results.tsv` md5 `c912e674dad64fe9de18c8b8bbf132ce`.
+The portal stores them gzipped and records these as `content_md5sum`; the `md5sum` it reports
+(`de0e31a4…`, `60df2f12…`) is of its own compressed copy. `--gzip` writes a compressed form with
+`mtime=0`, so that md5 is reproducible too.
 
 ## Environment
 

@@ -4,6 +4,10 @@
 # 275 MB, exceeds GitHub's 100 MB hard limit.
 hit_guides_by_genes.tsv
 
+# Every tested pair for the Hs27 screen: 257 MB (102 MB gzipped), and its intermediate.
+element_level_results_all_pairs.tsv
+element_level_results_unfiltered*.tsv
+
 # Manuscript supplementary material — required input, distributed with the paper,
 # not redistributed here. Table S4 "Guide Activity" is the sheet the CRISPRa pipeline reads.
 Supplementary_Table1.xlsx

@@ -9,7 +9,8 @@ its equivalents as gzipped TSV. So this script does exactly four things, and not
   1. drops the unnamed index column
   2. rewrites coordinate columns as integers (asserted lossless: no blanks, every value integral)
   3. adds `peak_id` and `intended_target_name` to the differential-peak table
-  4. writes tab-separated, gzip with mtime=0 so the md5 is reproducible
+  4. writes tab-separated and uncompressed (`--gzip` compresses, with mtime=0 so the md5 stays
+     reproducible)
 
 Step 3 needs a word, because both columns restore identifiers the notebook had and dropped.
 
@@ -48,9 +49,9 @@ GUIDES = Path(os.environ.get("MULTIOME_GUIDE_LIBRARY",
 # source CSV -> (submission name, whether to add intended_target_name from the guide library)
 FILES = {
     "multiome_paper_guide_effect_matrix.csv":
-        ("rpe1_multiome_element_level_gex_results.tsv.gz", False),
+        ("rpe1_multiome_element_level_gex_results.tsv", False),
     "multiome_paper_differential_peaks_by_guide.csv":
-        ("rpe1_multiome_element_level_atac_results.tsv.gz", True),
+        ("rpe1_multiome_element_level_atac_results.tsv", True),
 }
 
 
@@ -81,10 +82,15 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--out", type=Path, default=OUT,
                     help="directory to write the submission copies into")
-    out_dir = ap.parse_args().out
+    ap.add_argument("--gzip", action="store_true",
+                    help="gzip the output, appending .gz to each name")
+    args = ap.parse_args()
+    out_dir = args.out
     out_dir.mkdir(parents=True, exist_ok=True)
     targets = guide_targets(GUIDES)
     for src_name, (out_name, add_target_name) in FILES.items():
+        if args.gzip:
+            out_name += ".gz"
         src, out = SRC / src_name, out_dir / out_name
         with open(src, newline="") as fh:
             reader = csv.reader(fh)
@@ -107,7 +113,7 @@ def main():
                 header = header[:insert_at] + ["intended_target_name"] + header[insert_at:]
                 header = header[:peak_id_at] + ["peak_id"] + header[peak_id_at:]
             rows = 0
-            with gzip.GzipFile(out, "wb", mtime=0) as gz:
+            with (gzip.GzipFile(out, "wb", mtime=0) if args.gzip else open(out, "wb")) as gz:
                 gz.write(("\t".join(header) + "\n").encode())
                 for line, row in enumerate(reader, start=2):
                     row = row[1:]

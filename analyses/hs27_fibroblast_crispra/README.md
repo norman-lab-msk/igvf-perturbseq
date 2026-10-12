@@ -39,6 +39,8 @@ coefficients.
 4. Melts effect scores and both p-value layers to one row per element × gene, maps symbols to
    unversioned Ensembl IDs, filters to `p_val_adj < 0.05`.
 
+`add_log2_fold_change.py` writes the same table for every tested pair and adds `log2_fold_change`.
+
 ## Inputs
 
 Pinned by SHA-256, paths relative to this directory.
@@ -48,12 +50,18 @@ Pinned by SHA-256, paths relative to this directory.
 | `merged_guides_promoters_UPSTREAM_PRIORITIZED.csv` | yes | `1ac915099d18032148841b862331ce7bb33d24bf811f9bee01424c4b534c6f0f` |
 | `Supplementary_Table1.xlsx` — 17 MB, distributed with the paper. Only sheet `Table S4 Guide Activity` is read. | no | `dc125f4727d650163fbfb08175d2a48ea77406787e77d3fa21a134639266a6c0` |
 | `fibroblast_CRISPRa_mean_pop.h5ad` — 1.7 GB, from Zenodo below. | no | `6e10a2605a3dbc448ac4756399adc947a493a75f8961d3793af8f851aa0411cf` |
+| `20240310_fibroblast_final_low_UMI_count_regressions_coef_mean_pop.h5ad` — 12 GB, 10,917 × 30,395. `X` is the coefficient matrix TFs_CRISPRa Step 4 writes as `…coef_mean_pop.hdf`, converted to AnnData. Read only by `add_log2_fold_change.py`. | no | `000e4a776d016b66e8da5ce5d0aebf137406e016fc2d83683e518455b197e2a4` |
 
 **Data availability.** Mean-population matrix:
 [10.5281/zenodo.15200179](https://doi.org/10.5281/zenodo.15200179) (byte-identical to the run of
 record, md5 `ba44c7813903bb5df900348d6b0d589a`). Other processed data:
 <https://zenodo.org/communities/normanlabmsk/>. Raw FASTQs: SRA
 [PRJNA1108254](https://www.ncbi.nlm.nih.gov/bioproject/?term=PRJNA1108254).
+
+The count-scale regression matrix is not deposited. Regenerate it with *Step 4 - Simplified
+regressions* in [norman-lab-msk/TFs_CRISPRa](https://github.com/norman-lab-msk/TFs_CRISPRa) from
+`fibroblast_CRISPRa_final_pop.h5ad` and `fibroblast_CRISPRa_aggr_total_guide_umis.h5` in the same
+Zenodo record.
 
 ## Outputs
 
@@ -71,12 +79,26 @@ record, md5 `ba44c7813903bb5df900348d6b0d589a`). Other processed data:
 `results/element_level_results_guide_summary.tsv` — one row per element, with `n_de_genes`,
 `n_upregulated`, `n_downregulated` and the element coordinates.
 
+`results/element_level_results_all_pairs.tsv` — every tested element × gene, 1,538,082 rows
+(313 elements × 4,914 genes). Not committed (257 MB); SHA-256
+`43fd56615438986b5ae8b28d271cf58e9e80269e3ab77fd05e5a48c90028f981`. Its rows at `p_val_adj < 0.05` are
+`element_level_results.tsv`, with seven Ensembl IDs that are not GENCODE v43 genes replaced by their v43
+IDs (`../gencode_v43_gene_ids.tsv`). Same columns, plus:
+
+| Column | Meaning |
+|---|---|
+| `log2_fold_change` | Model-based: `log2((CPM + 1) / (CPM_control + 1))`, from the count-scale regression (control + guide coefficient, clipped at zero). |
+
 ## To run
 
 Fetch the matrix from Zenodo, then run **from this directory**
 
 ```bash
 python generate_element_level_results.py --out results/element_level_results.tsv
+
+# every tested pair, with log2_fold_change
+python generate_element_level_results.py --padj_thresh 2 --out element_level_results_unfiltered.tsv
+python add_log2_fold_change.py
 ```
 Tested with Python 3.13.7, scanpy 1.11.4, anndata 0.12.2, pandas 2.3.2, numpy 2.3.3, scipy 1.16.2,
 h5py 3.14.0, openpyxl 3.1.5.
